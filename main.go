@@ -139,4 +139,5 @@ func main() {
 
 func init() {
 	log.SetPrefix("[fcs-motor] ")
+	log.SetFlags(0)
 }
