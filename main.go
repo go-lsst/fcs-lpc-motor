@@ -103,29 +103,37 @@ func main() {
 	}
 
 	m1 := NewMotor("134.158.125.223:502")
+	m2 := NewMotor("134.158.125.224:502")
 
-	for _, p := range params {
-		v, err := m1.read(p)
-		var vv uint64
-		switch len(v) {
-		case 2:
-			vv = uint64(codec.Uint16(v))
-		case 4:
-			vv = uint64(codec.Uint32(v))
-		case 8:
-			vv = codec.Uint64(v)
+	for _, m := range []Motor{m1, m2} {
+		log.Printf(" === motor [%s] ===\n", m.Address)
+
+		for _, p := range params {
+			v, err := m.read(p)
+			var vv uint64
+			switch len(v) {
+			case 2:
+				vv = uint64(codec.Uint16(v))
+			case 4:
+				vv = uint64(codec.Uint32(v))
+			case 8:
+				vv = codec.Uint64(v)
+			}
+			if err != nil {
+				log.Printf(
+					"Pr-%s (%05d): err=%v\n",
+					p, p.ToModbus(), err,
+				)
+			} else {
+				log.Printf(
+					"Pr-%s (%05d): %v %v\n",
+					p, p.ToModbus(), v, vv,
+				)
+			}
 		}
-		if err != nil {
-			log.Printf(
-				"Pr-%s (%05d): err=%v\n",
-				p, p.ToModbus(), err,
-			)
-		} else {
-			log.Printf(
-				"Pr-%s (%05d): %v %v\n",
-				p, p.ToModbus(), v, vv,
-			)
-		}
+
+		log.Printf("\n")
+		log.Printf("-- end --\n\n")
 	}
 }
 
