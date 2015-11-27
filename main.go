@@ -164,6 +164,8 @@ func dispatch(name string) error {
 	switch name {
 	case "shell":
 		return runModbusShell()
+	case "web":
+		return runWebServer()
 	default:
 		return fmt.Errorf("[%s] is not a valid command", name)
 	}
