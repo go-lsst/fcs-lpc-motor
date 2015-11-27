@@ -118,6 +118,8 @@ func (sh *Shell) cmdGet(args []string) error {
 
 	o, err := sh.motor.read(param)
 	if err != nil {
+		log.Printf("error: %v\n", err)
+		err = nil
 		return err
 	}
 
