@@ -51,7 +51,11 @@ Motor: %s
 			fmt.Fprintf(w, "\t</tr>\n")
 			continue
 		}
-		fmt.Fprintf(w, "<td><pre><code>%s</code></pre></td>\n", displayBytes(o))
+		fmt.Fprintf(
+			w,
+			"<td><pre><code>%s ==> %6d</code></pre></td>\n",
+			displayBytes(o), codec.Uint16(o),
+		)
 		fmt.Fprintf(w, "\t</tr>\n")
 	}
 	fmt.Fprintf(w, "</table>\n")
