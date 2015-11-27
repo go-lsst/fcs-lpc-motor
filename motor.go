@@ -34,10 +34,18 @@ func NewParameterFromMenu(menu string) (Parameter, error) {
 	if err != nil {
 		return p, err
 	}
+	if m > 162 {
+		return p, fmt.Errorf("motor: invalid menu value (%d>162) [pr=%s]", m, menu)
+	}
+
 	i, err := strconv.Atoi(toks[1])
 	if err != nil {
 		return p, err
 	}
+	if i >= 100 {
+		return p, fmt.Errorf("motor: invalid index value (%d>=100) [pr=%s]", i, menu)
+	}
+
 	return Parameter{Menu: m, Index: i, Size: 1}, err
 }
 
