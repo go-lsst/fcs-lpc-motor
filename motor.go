@@ -49,7 +49,7 @@ func NewParameterFromMenu(menu string) (Parameter, error) {
 	return Parameter{Menu: m, Index: i, Size: 1}, err
 }
 
-// NewParameter creates a parameter from its modbus address register.
+// NewParameter creates a parameter from its modbus register.
 func NewParameter(reg uint16) Parameter {
 	return Parameter{
 		Menu:  int(reg / 100),
