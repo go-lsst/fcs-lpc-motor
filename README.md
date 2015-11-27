@@ -51,3 +51,11 @@ sh> fcs-lpc-motor
 [fcs-motor] 
 [fcs-motor] -- end --
 ```
+
+Or, interactively:
+
+```sh
+sh> fcs-lpc-motor shell
+mbus> get 2409
+[fcs-motor] Pr-24.010: [0x7d 0xdf] [125 223] (32223)
+```
