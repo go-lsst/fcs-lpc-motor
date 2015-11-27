@@ -44,10 +44,11 @@ func NewShell() *Shell {
 	}
 
 	sh.cmds = map[string]shellCmd{
-		"dump": sh.cmdDump,
-		"get":  sh.cmdGet,
-		"quit": sh.cmdQuit,
-		"set":  sh.cmdSet,
+		"dump":  sh.cmdDump,
+		"get":   sh.cmdGet,
+		"motor": sh.cmdMotor,
+		"quit":  sh.cmdQuit,
+		"set":   sh.cmdSet,
 	}
 	return sh
 }
@@ -148,6 +149,20 @@ func (sh *Shell) cmdSet(args []string) error {
 func (sh *Shell) cmdDump(args []string) error {
 	var err error
 	return err
+}
+
+func (sh *Shell) cmdMotor(args []string) error {
+	switch len(args) {
+	case 0:
+		log.Printf("connected to [%s]\n", sh.motor.Address)
+		return nil
+	case 1:
+		sh.motor = NewMotor(args[0])
+		return nil
+	default:
+		return fmt.Errorf("cmd-motor: too many arguments (%d)", len(args))
+	}
+	return nil
 }
 
 func (sh *Shell) parseParam(arg string) (Parameter, error) {
