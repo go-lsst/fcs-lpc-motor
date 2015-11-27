@@ -87,6 +87,10 @@ func (m *Motor) read(p Parameter) ([]byte, error) {
 	return o, err
 }
 
+func (m *Motor) write(p Parameter, v []byte) ([]byte, error) {
+	return m.c.WriteMultipleRegisters(p.ToModbus(), 1, v)
+}
+
 func main() {
 	flag.Parse()
 

@@ -120,17 +120,11 @@ func (sh *Shell) cmdGet(args []string) error {
 	if err != nil {
 		return err
 	}
-	hex := make([]string, len(o))
-	dec := make([]string, len(o))
-	for i, v := range o {
-		hex[i] = fmt.Sprintf("0x%02x", v)
-		dec[i] = fmt.Sprintf("%3d", v)
-	}
+
 	log.Printf(
-		"Pr-%v: [%s] [%s] (%v)\n",
+		"Pr-%v: %s (%v)\n",
 		param,
-		strings.Join(hex, " "),
-		strings.Join(dec, " "),
+		displayBytes(o),
 		codec.Uint16(o),
 	)
 
@@ -138,11 +132,42 @@ func (sh *Shell) cmdGet(args []string) error {
 }
 
 func (sh *Shell) cmdSet(args []string) error {
+	log.Printf(">>> %v\n", args)
 	param, err := sh.parseParam(args[0])
 	if err != nil {
 		return err
 	}
-	log.Printf("set Pr-%v [%s]...\n", param, args[1])
+	vtype := "u16"
+	if len(args) > 2 {
+		vtype = args[2]
+	}
+
+	v := make([]byte, 2)
+
+	switch vtype {
+	case "u16", "uint16":
+		vv, err := strconv.ParseUint(args[1], 10, 16)
+		if err != nil {
+			return err
+		}
+		codec.PutUint16(v, uint16(vv))
+
+	default:
+		return fmt.Errorf("cmd-set: invalid value-type (%v)", vtype)
+	}
+
+	log.Printf("set Pr-%v %s (%v)...\n", param, args[1], displayBytes(v))
+	o, err := sh.motor.write(param, v)
+	if err != nil {
+		return err
+	}
+	log.Printf(
+		"Pr-%v: %s (%v)\n",
+		param,
+		displayBytes(o),
+		codec.Uint16(o),
+	)
+
 	return err
 }
 
@@ -185,4 +210,15 @@ func (sh *Shell) parseParam(arg string) (Parameter, error) {
 	}
 	p = NewParameter(uint16(reg))
 	return p, err
+}
+
+func displayBytes(o []byte) string {
+	hex := make([]string, len(o))
+	dec := make([]string, len(o))
+	for i, v := range o {
+		hex[i] = fmt.Sprintf("0x%02x", v)
+		dec[i] = fmt.Sprintf("%3d", v)
+	}
+
+	return fmt.Sprintf("hex=%s dec=%s", hex, dec)
 }
