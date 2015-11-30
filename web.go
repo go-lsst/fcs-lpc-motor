@@ -27,36 +27,72 @@ type webServer struct {
 func (srv *webServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(
 		w,
-		`<title>LSST FCS Motors</title>
-Motor: %s
-
-<h1> Parameters </h1>
-
+		`%s
+<title>LSST FCS Motors</title>
 `,
-		srv.motor.Address,
+		css,
 	)
 
-	fmt.Fprintf(w, "<table border=\"1\" style=\"width:100%\">\n")
-	fmt.Fprintf(w, "\t<tr><th>Parameter</th><th>Title</th><th>Value</th></tr>\n")
-	for _, p := range srv.params {
-		fmt.Fprintf(w, "\t<tr>\n")
-		fmt.Fprintf(
-			w,
-			"\t\t<td>%02d.%03d</td><td>%s</td> ",
-			p.menu, p.index, p.title,
-		)
-		o, err := srv.motor.read(NewParameter(p.mbreg()))
-		if err != nil {
-			fmt.Fprintf(w, "<td>err=%v</td>\n", err)
+	fmt.Fprintf(w, "<body>\n\n")
+	for i, motor := range []Motor{
+		NewMotor("134.158.125.223:502"),
+		NewMotor("134.158.125.224:502"),
+	} {
+		fmt.Fprintf(w, "<div class=\"motor-%d\">\n", i+1)
+		fmt.Fprintf(w, "<div class=\"header\"><h1>Motor-%d (%s)</h1></div>\n", i+1, motor.Address)
+		fmt.Fprintf(w, "<table border=\"1\" style=\"width:100%%\">\n")
+		fmt.Fprintf(w, "\t<tr><th>Parameter</th><th>Title</th><th>Value</th></tr>\n")
+		for _, p := range srv.params {
+			fmt.Fprintf(w, "\t<tr>\n")
+			fmt.Fprintf(
+				w,
+				"\t\t<td>%02d.%03d</td><td>%s</td> ",
+				p.menu, p.index, p.title,
+			)
+			o, err := motor.read(NewParameter(p.mbreg()))
+			if err != nil {
+				fmt.Fprintf(w, "<td>err=%v</td>\n", err)
+				fmt.Fprintf(w, "\t</tr>\n")
+				continue
+			}
+			fmt.Fprintf(
+				w,
+				"<td><pre><code>%s ==> %6d</code></pre></td>\n",
+				displayBytes(o), codec.Uint16(o),
+			)
 			fmt.Fprintf(w, "\t</tr>\n")
-			continue
 		}
-		fmt.Fprintf(
-			w,
-			"<td><pre><code>%s ==> %6d</code></pre></td>\n",
-			displayBytes(o), codec.Uint16(o),
-		)
-		fmt.Fprintf(w, "\t</tr>\n")
+		fmt.Fprintf(w, "</table>\n</div>\n\n")
 	}
-	fmt.Fprintf(w, "</table>\n")
+	fmt.Fprintf(w, "</body>\n")
 }
+
+const css = `<style>
+div.header {
+    background-color:black;
+    color:white;
+    text-align:center;
+    padding:5px;
+}
+
+div.motor-1 {
+    width:45%;
+    float:left;
+    padding:5px; 
+}
+
+div.motor-2 {
+    width:45%;
+    float:right;
+    padding:5px; 
+}
+
+#footer {
+    background-color:black;
+    color:white;
+    clear:both;
+    text-align:center;
+    padding:5px; 
+}
+</style>
+`
