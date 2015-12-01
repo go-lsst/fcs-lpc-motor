@@ -56,6 +56,14 @@ Or, interactively:
 
 ```sh
 sh> fcs-lpc-motor shell
-mbus> get 2409
-[fcs-motor] Pr-24.010: [0x7d 0xdf] [125 223] (32223)
+
+mbus> get 3.29
+[fcs-motor] Pr-03.029: hex=[0x00 0x00 0xc7 0xab] dec=[  0   0 199 171] (51115)
+```
+
+Or, via a web interface:
+
+```sh
+sh> fcs-lpc-motor web
+[fcs-motor] listening on http://localhost:7070/lsst-fcs-motors ...
 ```
