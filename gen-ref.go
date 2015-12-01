@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/go-lsst/ncs/drivers/m702"
 )
 
 const (
@@ -28,25 +30,11 @@ const (
 	VM_RATED_CURRENT          = 99999.999
 )
 
-type Param struct {
-	menu   int
-	index  int
-	title  string
-	defval string
-	rw     bool
-	size   int
-	data   [2]byte
-}
-
-func (p *Param) mbreg() uint16 {
-	return uint16(p.menu*100 + p.index - 1)
-}
-
-type Params []Param
+type Params []m702.Parameter
 
 func (p Params) Len() int           { return len(p) }
 func (p Params) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p Params) Less(i, j int) bool { return p[i].mbreg() < p[j].mbreg() }
+func (p Params) Less(i, j int) bool { return p[i].MBReg() < p[j].MBReg() }
 
 func main() {
 	flag.Parse()
@@ -63,7 +51,7 @@ func main() {
 	r.Comma = ';'
 	r.Comment = '#'
 
-	var params []Param
+	var params []m702.Parameter
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
@@ -90,14 +78,21 @@ func main() {
 	}
 	defer o.Close()
 
-	fmt.Fprintf(o, "package main\n\nfunc init() {\n")
-	fmt.Fprintf(o, "\tparams = []Param{\n")
+	fmt.Fprintf(o, `package main
+
+import (
+	"github.com/go-lsst/ncs/drivers/m702"
+)
+
+func init() {
+`)
+	fmt.Fprintf(o, "\tparams = []m702.Parameter{\n")
 
 	for _, p := range params {
 		fmt.Fprintf(
 			o,
-			"\t\t{menu: %d, index: %d, title: %q, defval: %q, rw: %v, size: %d},\n",
-			p.menu, p.index, p.title, p.defval, p.rw, p.size,
+			"\t\t{Index: [2]int{%d, %d}, Title: %q, DefVal: %q, RW: %v},\n",
+			p.Index[0], p.Index[1], p.Title, p.DefVal, p.RW,
 		)
 	}
 	fmt.Fprintf(o, "\t}\n}\n")
@@ -107,7 +102,7 @@ func main() {
 	}
 }
 
-func parseRecord(data []string) Param {
+func parseRecord(data []string) m702.Parameter {
 	toks := strings.Split(data[0], ".")
 	menu, err := strconv.Atoi(toks[0])
 	if err != nil {
@@ -119,17 +114,11 @@ func parseRecord(data []string) Param {
 	}
 
 	rw := strings.TrimSpace(data[4]) == "rw"
-	size, err := strconv.Atoi(strings.TrimSpace(data[3]))
-	if err != nil {
-		log.Fatalf("error: %v\n", err)
-	}
 
-	return Param{
-		menu:   menu,
-		index:  index,
-		title:  strings.TrimSpace(data[1]),
-		defval: strings.TrimSpace(data[2]),
-		size:   size,
-		rw:     rw,
+	return m702.Parameter{
+		Index:  [2]int{menu, index},
+		Title:  strings.TrimSpace(data[1]),
+		DefVal: strings.TrimSpace(data[2]),
+		RW:     rw,
 	}
 }

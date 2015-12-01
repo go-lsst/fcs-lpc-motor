@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-lsst/ncs/drivers/m702"
 	"github.com/peterh/liner"
 )
 
@@ -17,7 +18,7 @@ type Shell struct {
 	prompt string
 	cmds   map[string]shellCmd
 	hist   string
-	motor  Motor
+	motor  m702.Motor
 }
 
 func NewShell() *Shell {
@@ -25,7 +26,7 @@ func NewShell() *Shell {
 		shell:  liner.NewLiner(),
 		prompt: "mbus> ",
 		hist:   filepath.Join(".", ".fcs_lpc_motor_history"),
-		motor:  NewMotor("134.158.125.223:502"),
+		motor:  m702.New("134.158.125.223:502"),
 	}
 
 	sh.shell.SetCtrlCAborts(true)
@@ -116,10 +117,10 @@ func (sh *Shell) cmdGet(args []string) error {
 		return err
 	}
 
-	o, err := sh.motor.read(param)
+	err = sh.motor.ReadParam(&param)
 	if err != nil {
 		log.Printf("error reading parameter [Pr-%v] (reg=%d): %v\n",
-			param, param.ToModbus(), err,
+			param, param.MBReg(), err,
 		)
 		err = nil
 		return err
@@ -128,8 +129,8 @@ func (sh *Shell) cmdGet(args []string) error {
 	log.Printf(
 		"Pr-%v: %s (%v)\n",
 		param,
-		displayBytes(o),
-		codec.Uint32(o),
+		displayBytes(param.Data[:]),
+		codec.Uint32(param.Data[:]),
 	)
 
 	return err
@@ -141,35 +142,38 @@ func (sh *Shell) cmdSet(args []string) error {
 	if err != nil {
 		return err
 	}
-	vtype := "u16"
+	vtype := "u32"
 	if len(args) > 2 {
 		vtype = args[2]
 	}
 
-	v := make([]byte, 2)
-
 	switch vtype {
-	case "u16", "uint16":
-		vv, err := strconv.ParseUint(args[1], 10, 16)
+	case "u32", "uint32":
+		vv, err := strconv.ParseUint(args[1], 10, 32)
 		if err != nil {
 			return err
 		}
-		codec.PutUint16(v, uint16(vv))
+		codec.PutUint32(param.Data[:], uint32(vv))
 
 	default:
 		return fmt.Errorf("cmd-set: invalid value-type (%v)", vtype)
 	}
 
-	log.Printf("set Pr-%v %s (%v)...\n", param, args[1], displayBytes(v))
-	o, err := sh.motor.write(param, v)
+	log.Printf(
+		"set Pr-%v %s (%v)...\n",
+		param, args[1], displayBytes(param.Data[:]),
+	)
+	err = sh.motor.WriteParam(param)
 	if err != nil {
+		log.Printf("error writing parameter Pr-%v: %v\n", param, err)
+		err = nil
 		return err
 	}
 	log.Printf(
 		"Pr-%v: %s (%v)\n",
 		param,
-		displayBytes(o),
-		codec.Uint16(o),
+		displayBytes(param.Data[:]),
+		codec.Uint32(param.Data[:]),
 	)
 
 	return err
@@ -183,10 +187,10 @@ func (sh *Shell) cmdDump(args []string) error {
 func (sh *Shell) cmdMotor(args []string) error {
 	switch len(args) {
 	case 0:
-		log.Printf("connected to [%s]\n", sh.motor.Address)
+		log.Printf("connected to [%s]\n", sh.motor.Addr)
 		return nil
 	case 1:
-		sh.motor = NewMotor(args[0])
+		sh.motor = m702.New(args[0])
 		return nil
 	default:
 		return fmt.Errorf("cmd-motor: too many arguments (%d)", len(args))
@@ -194,12 +198,12 @@ func (sh *Shell) cmdMotor(args []string) error {
 	return nil
 }
 
-func (sh *Shell) parseParam(arg string) (Parameter, error) {
+func (sh *Shell) parseParam(arg string) (m702.Parameter, error) {
 	var err error
-	var p Parameter
+	var p m702.Parameter
 
 	if strings.Contains(arg, ".") {
-		return NewParameterFromMenu(arg)
+		return m702.NewParameterFromMenu(arg)
 	}
 
 	var reg uint64
@@ -212,7 +216,7 @@ func (sh *Shell) parseParam(arg string) (Parameter, error) {
 	if err != nil {
 		return p, err
 	}
-	p = NewParameter(uint16(reg))
+	p = m702.NewParameter(uint16(reg))
 	return p, err
 }
 

@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/go-lsst/ncs/drivers/m702"
 )
 
 func runWebServer() error {
 	srv := &webServer{
-		motor:  NewMotor("134.158.125.223:502"),
-		params: make([]Param, len(params)),
+		motor:  m702.New("134.158.125.223:502"),
+		params: make([]m702.Parameter, len(params)),
 	}
 	copy(srv.params, params)
 
@@ -20,8 +22,8 @@ func runWebServer() error {
 }
 
 type webServer struct {
-	motor  Motor
-	params []Param
+	motor  m702.Motor
+	params []m702.Parameter
 }
 
 func (srv *webServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -34,12 +36,12 @@ func (srv *webServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 
 	fmt.Fprintf(w, "<body>\n\n")
-	for i, motor := range []Motor{
-		NewMotor("134.158.125.223:502"),
-		NewMotor("134.158.125.224:502"),
+	for i, motor := range []m702.Motor{
+		m702.New("134.158.125.223:502"),
+		m702.New("134.158.125.224:502"),
 	} {
 		fmt.Fprintf(w, "<div class=\"motor-%d\">\n", i+1)
-		fmt.Fprintf(w, "<div class=\"header\"><h1>Motor-%d (%s)</h1></div>\n", i+1, motor.Address)
+		fmt.Fprintf(w, "<div class=\"header\"><h1>Motor-%d (%s)</h1></div>\n", i+1, motor.Addr)
 		fmt.Fprintf(w, "<table border=\"1\" style=\"width:100%%\">\n")
 		fmt.Fprintf(w, "\t<tr><th>Parameter</th><th>Title</th><th>Value</th></tr>\n")
 		for _, p := range srv.params {
@@ -47,9 +49,9 @@ func (srv *webServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(
 				w,
 				"\t\t<td>%02d.%03d</td><td>%s</td> ",
-				p.menu, p.index, p.title,
+				p.Index[0], p.Index[1], p.Title,
 			)
-			o, err := motor.read(NewParameter(p.mbreg()))
+			err := motor.ReadParam(&p)
 			if err != nil {
 				fmt.Fprintf(w, "<td>err=%v</td>\n", err)
 				fmt.Fprintf(w, "\t</tr>\n")
@@ -58,7 +60,7 @@ func (srv *webServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(
 				w,
 				"<td><pre><code>%s ==> %6d</code></pre></td>\n",
-				displayBytes(o), codec.Uint32(o),
+				displayBytes(p.Data[:]), codec.Uint32(p.Data[:]),
 			)
 			fmt.Fprintf(w, "\t</tr>\n")
 		}
