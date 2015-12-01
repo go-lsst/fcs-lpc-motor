@@ -118,7 +118,9 @@ func (sh *Shell) cmdGet(args []string) error {
 
 	o, err := sh.motor.read(param)
 	if err != nil {
-		log.Printf("error: %v\n", err)
+		log.Printf("error reading parameter [Pr-%v] (reg=%d): %v\n",
+			param, param.ToModbus(), err,
+		)
 		err = nil
 		return err
 	}
