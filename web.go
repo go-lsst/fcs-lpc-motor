@@ -58,7 +58,7 @@ func (srv *webServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(
 				w,
 				"<td><pre><code>%s ==> %6d</code></pre></td>\n",
-				displayBytes(o), codec.Uint16(o),
+				displayBytes(o), codec.Uint32(o),
 			)
 			fmt.Fprintf(w, "\t</tr>\n")
 		}

@@ -59,7 +59,7 @@ func NewParameter(reg uint16) Parameter {
 }
 
 func (p Parameter) ToModbus() uint16 {
-	return uint16(p.Menu*100 + p.Index - 1)
+	return uint16(p.Menu*100 + p.Index - 1 + 0x4000)
 }
 
 func (p Parameter) String() string {
@@ -79,7 +79,7 @@ func NewMotor(addr string) Motor {
 }
 
 func (m *Motor) read(p Parameter) ([]byte, error) {
-	o, err := m.c.ReadHoldingRegisters(p.ToModbus(), p.Size)
+	o, err := m.c.ReadHoldingRegisters(p.ToModbus(), 2)
 	if err != nil {
 		return nil, err
 	}
@@ -87,5 +87,5 @@ func (m *Motor) read(p Parameter) ([]byte, error) {
 }
 
 func (m *Motor) write(p Parameter, v []byte) ([]byte, error) {
-	return m.c.WriteMultipleRegisters(p.ToModbus(), 1, v)
+	return m.c.WriteMultipleRegisters(p.ToModbus(), 2, v)
 }

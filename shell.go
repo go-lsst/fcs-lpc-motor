@@ -127,7 +127,7 @@ func (sh *Shell) cmdGet(args []string) error {
 		"Pr-%v: %s (%v)\n",
 		param,
 		displayBytes(o),
-		codec.Uint16(o),
+		codec.Uint32(o),
 	)
 
 	return err
