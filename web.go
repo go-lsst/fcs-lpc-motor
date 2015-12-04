@@ -229,6 +229,7 @@ $(document).ready(function() {
 	var sock = null;
 	var wsuri = "ws://{{.Addr}}/lsst-fcs-motors/data";
 	var data = [ ];
+	var last_update = null;
 
 	var imotor = 0;
 	{{range $idx, $m := .Motors}}
@@ -250,10 +251,8 @@ $(document).ready(function() {
 			sock = null;
 		}
 		sock.onmessage = function(e) {
-			var obj = JSON.parse(e.data);
-			console.log("new data: "+obj);
-			// console.log("json: "+e.data);
-			data = obj;
+			data = JSON.parse(e.data);
+			last_update = (new Date()).toUTCString();
 			display(imotor);
 		}
 	};
@@ -274,6 +273,7 @@ $(document).ready(function() {
 			var row = "<tr class=\"data\"><td>"+index+"</td><td>"+title+"</td><td>"+value+"</td></tr>";
 			table.append(row);
 		}
+		$("#last-update").text("Last update: "+last_update);
 	};
 });
 </script>
@@ -287,6 +287,8 @@ $(document).ready(function() {
 
 <nav>
 {{range $i, $m := .Motors}}<button id="butn-motor-{{$i}}">Motor-{{$i}} ({{$m.Addr}})</button>{{end}}
+
+<p id="last-update">Last update: N/A</p>
 </nav>
 
 <section>
