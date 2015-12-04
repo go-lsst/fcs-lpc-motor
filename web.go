@@ -208,13 +208,6 @@ div.motor {
     padding:5px; 
 }
 
-div.motor-1 {
-    width:45%;
-    float:right;
-    padding:5px; 
-	display: none;
-}
-
 #footer {
     background-color:black;
     color:white;
