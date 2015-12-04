@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/go-lsst/ncs/drivers/m702"
@@ -107,23 +106,12 @@ func init() {
 }
 
 func parseRecord(data []string) m702.Parameter {
-	toks := strings.Split(data[0], ".")
-	menu, err := strconv.Atoi(toks[0])
+	p, err := m702.NewParameter(data[0])
 	if err != nil {
-		log.Fatalf("error: %v\n", err)
+		panic(err)
 	}
-	index, err := strconv.Atoi(toks[1])
-	if err != nil {
-		log.Fatalf("error: %v\n", err)
-	}
-
-	rw := strings.TrimSpace(data[4]) == "rw"
-
-	slot := 0 // FIXME
-	return m702.Parameter{
-		Index:  [3]int{slot, menu, index},
-		Title:  strings.TrimSpace(data[1]),
-		DefVal: strings.TrimSpace(data[2]),
-		RW:     rw,
-	}
+	p.Title = strings.TrimSpace(data[1])
+	p.DefVal = strings.TrimSpace(data[2])
+	p.RW = strings.TrimSpace(data[4]) == "rw"
+	return p
 }
