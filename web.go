@@ -32,6 +32,7 @@ func (c *client) run() {
 	defer func() {
 		c.srv.unregister <- c
 		c.ws.Close()
+		c.srv = nil
 	}()
 	//c.ws.SetReadLimit(maxMessageSize)
 	//c.ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -39,7 +40,11 @@ func (c *client) run() {
 	for data := range c.datac {
 		err := websocket.Message.Send(c.ws, string(data))
 		if err != nil {
-			log.Printf("error sending data to [%v]: %v\n", c.ws, err)
+			log.Printf(
+				"error sending data to [%v]: %v\n",
+				c.ws.LocalAddr(),
+				err,
+			)
 			break
 		}
 	}
@@ -97,6 +102,10 @@ func (srv *webServer) run() {
 			if _, ok := srv.clients[c]; ok {
 				delete(srv.clients, c)
 				close(c.datac)
+				log.Printf(
+					"client disconnected [%v]\n",
+					c.ws.LocalAddr(),
+				)
 			}
 		case data := <-srv.datac:
 			buf.Reset()
