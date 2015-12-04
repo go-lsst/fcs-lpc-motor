@@ -126,32 +126,27 @@ func (srv *webServer) run() {
 	}
 }
 
-var global = 0
-
 func (srv *webServer) publishData() {
 	status := make([]motorStatus, len(srv.Motors))
 	copy(status, srv.Motors)
 
-	global++
 	for i := range status {
 		data := &status[i]
-		//motor := m702.New(data.Addr)
+		motor := m702.New(data.Addr)
 		for _, p := range srv.params {
-			/* FIXME
-			err := motor.ReadParam(&p)
-			if err != nil {
-				log.Printf("error reading Pr-%v: %v\n", p, err)
+			if i > 0 && (p.Index[0] == 2 || p.Index[0] == 3) {
+				// only motor-0 has slots-2|3
 				continue
 			}
-			*/
-			var err error
-			p.Data[2] = byte(i)
-			p.Data[3] = byte(global)
+			err := motor.ReadParam(&p)
+			if err != nil {
+				log.Printf("error reading %v Pr-%v: %v\n", data.Addr, p, err)
+				continue
+			}
 			data.Params = append(data.Params, newMotorData(p, err))
 		}
 	}
 
-	log.Printf("pushing data... (global=%d)\n", global)
 	srv.datac <- status
 }
 
