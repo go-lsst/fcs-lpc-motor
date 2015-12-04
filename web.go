@@ -23,7 +23,26 @@ func runWebServer() error {
 }
 
 type client struct {
-	ws *websocket.Conn
+	srv   *webServer
+	ws    *websocket.Conn
+	datac chan []byte
+}
+
+func (c *client) run() {
+	defer func() {
+		c.srv.unregister <- c
+		c.ws.Close()
+	}()
+	//c.ws.SetReadLimit(maxMessageSize)
+	//c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	//c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	for data := range c.datac {
+		err := websocket.Message.Send(c.ws, string(data))
+		if err != nil {
+			log.Printf("error sending data to [%v]: %v\n", c.ws, err)
+			break
+		}
+	}
 }
 
 type webServer struct {
@@ -45,10 +64,13 @@ func newWebServer() *webServer {
 			{Addr: "134.158.125.223:502"},
 			{Addr: "134.158.125.224:502"},
 		},
-		Addr:   "clrinfopc07.in2p3.fr:7070",
-		tmpl:   template.Must(template.New("fcs").Parse(displayTmpl)),
-		params: make([]m702.Parameter, len(params)),
-		datac:  make(chan []motorStatus),
+		Addr:       "clrinfopc07.in2p3.fr:7070",
+		tmpl:       template.Must(template.New("fcs").Parse(displayTmpl)),
+		params:     make([]m702.Parameter, len(params)),
+		clients:    make(map[*client]bool),
+		register:   make(chan *client),
+		unregister: make(chan *client),
+		datac:      make(chan []motorStatus),
 	}
 	copy(srv.params, params)
 
@@ -58,10 +80,40 @@ func newWebServer() *webServer {
 }
 
 func (srv *webServer) run() {
-	tick := time.NewTicker(5 * time.Second)
-	srv.publishData()
-	for range tick.C {
+	go func() {
+		tick := time.NewTicker(5 * time.Second)
 		srv.publishData()
+		for range tick.C {
+			srv.publishData()
+		}
+	}()
+
+	buf := new(bytes.Buffer)
+	for {
+		select {
+		case c := <-srv.register:
+			srv.clients[c] = true
+		case c := <-srv.unregister:
+			if _, ok := srv.clients[c]; ok {
+				delete(srv.clients, c)
+				close(c.datac)
+			}
+		case data := <-srv.datac:
+			buf.Reset()
+			err := json.NewEncoder(buf).Encode(data)
+			if err != nil {
+				log.Printf("error marshalling data: %v\n", err)
+				continue
+			}
+			for c := range srv.clients {
+				select {
+				case c.datac <- buf.Bytes():
+				default:
+					close(c.datac)
+					delete(srv.clients, c)
+				}
+			}
+		}
 	}
 }
 
@@ -97,63 +149,16 @@ func (srv *webServer) publishData() {
 func (srv *webServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("accepting new connection from %v...\n", r.Host)
 	srv.tmpl.Execute(w, srv)
-	/*
-		fmt.Fprintf(w, css)
-
-		fmt.Fprintf(w, "<body>\n\n")
-		for i, motor := range []m702.Motor{
-			m702.New("134.158.125.223:502"),
-			m702.New("134.158.125.224:502"),
-		} {
-			fmt.Fprintf(w, "<div class=\"motor-%d\">\n", i+1)
-			fmt.Fprintf(w, "<div class=\"header\"><h1>Motor-%d (%s)</h1></div>\n", i+1, motor.Addr)
-			fmt.Fprintf(w, "<table border=\"1\" style=\"width:100%%\">\n")
-			fmt.Fprintf(w, "\t<tr><th>Parameter</th><th>Title</th><th>Value</th></tr>\n")
-			for _, p := range srv.params {
-				fmt.Fprintf(w, "\t<tr>\n")
-				fmt.Fprintf(
-					w,
-					"\t\t<td>%02d.%03d</td><td>%s</td> ",
-					p.Index[0], p.Index[1], p.Title,
-				)
-				err := motor.ReadParam(&p)
-				if err != nil {
-					fmt.Fprintf(w, "<td>err=%v</td>\n", err)
-					fmt.Fprintf(w, "\t</tr>\n")
-					continue
-				}
-				fmt.Fprintf(
-					w,
-					"<td><pre><code>%s ==> %6d</code></pre></td>\n",
-					displayBytes(p.Data[:]), codec.Uint32(p.Data[:]),
-				)
-				fmt.Fprintf(w, "\t</tr>\n")
-			}
-			fmt.Fprintf(w, "</table>\n</div>\n\n")
-		}
-		fmt.Fprintf(w, "</body>\n")
-	*/
 }
 
 func (srv *webServer) dataHandler(ws *websocket.Conn) {
-	buf := new(bytes.Buffer)
-	for {
-		select {
-		case data := <-srv.datac:
-			buf.Reset()
-			err := json.NewEncoder(buf).Encode(data)
-			if err != nil {
-				log.Printf("error encoding data: %v\n", err)
-				continue
-			}
-
-			err = websocket.Message.Send(ws, string(buf.Bytes()))
-			if err != nil {
-				log.Printf("error sending ws data: %v\n", err)
-				//break // FIXME: deadlock
-			}
-		}
+	c := &client{
+		srv:   srv,
+		datac: make(chan []byte, 256),
+		ws:    ws,
 	}
+	srv.register <- c
+	c.run()
 }
 
 const displayTmpl = `
