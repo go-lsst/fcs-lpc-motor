@@ -48,6 +48,12 @@ func init() {
 		{Index: [3]int{0, 11, 36}, Title: "NV media card data previously loaded", DefVal: "n/a", RW: false},
 		{Index: [3]int{0, 11, 42}, Title: "Parameter cloning", DefVal: "0", RW: true},
 		{Index: [3]int{0, 11, 44}, Title: "User security status", DefVal: "Menu 0 (0)", RW: true},
+		{Index: [3]int{0, 18, 2}, Title: "Motor position", DefVal: "0", RW: true},
+		{Index: [3]int{0, 18, 4}, Title: "Motor speed (RPMs)", DefVal: "0", RW: true},
+		{Index: [3]int{0, 20, 22}, Title: "Motor speed", DefVal: "0", RW: true},
 		{Index: [3]int{0, 24, 10}, Title: "Active IP address", DefVal: "n/a", RW: false},
+		{Index: [3]int{2, 2, 15}, Title: "Rotation direction (+)", DefVal: "0", RW: true},
+		{Index: [3]int{2, 2, 16}, Title: "Rotation direction (-)", DefVal: "0", RW: true},
+		{Index: [3]int{3, 70, 0}, Title: "PLC position register-0", DefVal: "0", RW: true},
 	}
 }

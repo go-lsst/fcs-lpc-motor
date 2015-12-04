@@ -44,3 +44,9 @@
 11.044; User security status; Menu 0 (0); 0; rw;
 11.029; Software version; n/a; 0; ro;
 10.037; Action on trip detection; 0; 0; rw;
+20.022; Motor speed;0;0;rw;
+2.02.015; Rotation direction (+);0;0;rw;
+2.02.016; Rotation direction (-);0;0;rw;
+18.02; Motor position; 0;0;rw;
+18.04; Motor speed (RPMs);0;0;rw;
+3.70.000; PLC position register-0;0;0;rw;
