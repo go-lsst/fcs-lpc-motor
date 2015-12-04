@@ -32,9 +32,13 @@ const (
 
 type Params []m702.Parameter
 
-func (p Params) Len() int           { return len(p) }
-func (p Params) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p Params) Less(i, j int) bool { return p[i].MBReg() < p[j].MBReg() }
+func (p Params) Len() int      { return len(p) }
+func (p Params) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p Params) Less(i, j int) bool {
+	ii := int64(p[i].Index[0]*100000) + int64(p[i].MBReg())
+	jj := int64(p[j].Index[0]*100000) + int64(p[j].MBReg())
+	return ii < jj
+}
 
 func main() {
 	flag.Parse()
@@ -91,8 +95,8 @@ func init() {
 	for _, p := range params {
 		fmt.Fprintf(
 			o,
-			"\t\t{Index: [2]int{%d, %d}, Title: %q, DefVal: %q, RW: %v},\n",
-			p.Index[0], p.Index[1], p.Title, p.DefVal, p.RW,
+			"\t\t{Index: [3]int{%d, %d, %d}, Title: %q, DefVal: %q, RW: %v},\n",
+			p.Index[0], p.Index[1], p.Index[2], p.Title, p.DefVal, p.RW,
 		)
 	}
 	fmt.Fprintf(o, "\t}\n}\n")
@@ -115,8 +119,9 @@ func parseRecord(data []string) m702.Parameter {
 
 	rw := strings.TrimSpace(data[4]) == "rw"
 
+	slot := 0 // FIXME
 	return m702.Parameter{
-		Index:  [2]int{menu, index},
+		Index:  [3]int{slot, menu, index},
 		Title:  strings.TrimSpace(data[1]),
 		DefVal: strings.TrimSpace(data[2]),
 		RW:     rw,

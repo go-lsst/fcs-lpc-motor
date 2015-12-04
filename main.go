@@ -29,14 +29,6 @@ func main() {
 	}
 
 	m := m702.New("134.158.125.223:502")
-	for _, i := range []uint16{
-		506, 507, 508,
-	} {
-		p := m702.NewParameter(i)
-		err := m.ReadParam(&p)
-		log.Printf("Pr-%v: o=%v\terr=%v", p, p.Data[:], err)
-	}
-
 	testParams(m)
 }
 

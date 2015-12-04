@@ -199,25 +199,11 @@ func (sh *Shell) cmdMotor(args []string) error {
 }
 
 func (sh *Shell) parseParam(arg string) (m702.Parameter, error) {
-	var err error
 	var p m702.Parameter
-
-	if strings.Contains(arg, ".") {
-		return m702.NewParameterFromMenu(arg)
+	if !strings.Contains(arg, ".") {
+		return p, fmt.Errorf("cmd-motor: invalid parameter (%s)", arg)
 	}
-
-	var reg uint64
-	var base = 10
-	if strings.HasPrefix(arg, "0x") {
-		base = 16
-		arg = arg[len("0x"):]
-	}
-	reg, err = strconv.ParseUint(arg, base, 64)
-	if err != nil {
-		return p, err
-	}
-	p = m702.NewParameter(uint16(reg))
-	return p, err
+	return m702.NewParameter(arg)
 }
 
 func displayBytes(o []byte) string {
