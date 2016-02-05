@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func runWebServer() error {
+func runWebServer(args []string) error {
 	srv := newWebServer()
 	http.Handle("/lsst-fcs-motors", srv)
 	http.Handle("/lsst-fcs-motors/data", websocket.Handler(srv.dataHandler))
@@ -69,7 +69,7 @@ func newWebServer() *webServer {
 			{Addr: "134.158.125.223:502"},
 			{Addr: "134.158.125.224:502"},
 		},
-		Addr:       "clrinfopc07.in2p3.fr:7070",
+		Addr:       ":7070",
 		tmpl:       template.Must(template.New("fcs").Parse(displayTmpl)),
 		params:     make([]m702.Parameter, len(params)),
 		clients:    make(map[*client]bool),

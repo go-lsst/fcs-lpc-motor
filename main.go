@@ -18,8 +18,8 @@ var (
 func main() {
 	flag.Parse()
 
-	if flag.NArg() == 1 {
-		err := dispatch(flag.Arg(0))
+	if flag.NArg() >= 1 {
+		err := dispatch(flag.Arg(0), flag.Args()[1:])
 		if err != nil {
 			log.Fatalf("error dispatching [%s]: %v\n", flag.Arg(0), err)
 		}
@@ -49,20 +49,20 @@ func testParams(m m702.Motor) {
 	}
 }
 
-func dispatch(name string) error {
+func dispatch(name string, args []string) error {
 	var err error
 	switch name {
 	case "shell":
-		return runModbusShell()
+		return runModbusShell(args)
 	case "web":
-		return runWebServer()
+		return runWebServer(args)
 	default:
 		return fmt.Errorf("[%s] is not a valid command", name)
 	}
 	return err
 }
 
-func runModbusShell() error {
+func runModbusShell(args []string) error {
 	sh := NewShell()
 	defer sh.Close()
 	return sh.run()
