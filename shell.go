@@ -143,6 +143,9 @@ func (sh *Shell) cmdSet(args []string) error {
 		return err
 	}
 	vtype := "u32"
+	if len(args) > 1 && len(args[1]) > 0 && string(args[1][0]) == "-" {
+		vtype = "i32"
+	}
 	if len(args) > 2 {
 		vtype = args[2]
 	}
@@ -150,6 +153,13 @@ func (sh *Shell) cmdSet(args []string) error {
 	switch vtype {
 	case "u32", "uint32":
 		vv, err := strconv.ParseUint(args[1], 10, 32)
+		if err != nil {
+			return err
+		}
+		codec.PutUint32(param.Data[:], uint32(vv))
+
+	case "i32", "int32":
+		vv, err := strconv.ParseInt(args[1], 10, 32)
 		if err != nil {
 			return err
 		}
