@@ -1,9 +1,9 @@
 [Unit]
 Description=FCS LPC Motor service
+Requires=network-online.target
 
 [Service]
 ExecStart=/srv/lsst/bin/fcs-lpc-motor web
-Requires=network-online.target
 
 [Install]
 WantedBy=multi-user.target
