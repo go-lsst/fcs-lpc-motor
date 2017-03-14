@@ -26,7 +26,7 @@ func NewShell() *Shell {
 		shell:  liner.NewLiner(),
 		prompt: "mbus> ",
 		hist:   filepath.Join(".", ".fcs_lpc_motor_history"),
-		motor:  m702.New("134.158.125.223:502"),
+		motor:  m702.New("134.158.155.16:5021"),
 	}
 
 	sh.shell.SetCtrlCAborts(true)
